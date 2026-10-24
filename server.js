@@ -2,10 +2,15 @@ const express = require('express');
 const { Pool } = require('pg');
 
 const app = express();
+app.use(express.static('public'));
+
+
 const db = new Pool({ connectionString: 'postgres://localhost:5432/busqueue' });
 
+
+
 app.get('/', (req, res) => {
-  res.send('Server is working');
+  //res.send('Server is working');
 });
 
 app.get('/api/routes', async (req, res) => {

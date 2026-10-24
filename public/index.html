@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bus queue</title>
+</head>
+<body>
+  <section id="routeScreen">
+  <h1>Choose a route</h1>
+  <div id="routeList"></div>
+</section>
+
+<section id="timeScreen" hidden>
+  <button id="backBtn">← Routes</button>
+  <h1 id="routeTitle"></h1>
+  <p>Choose a departure time</p>
+  <div id="timeList"></div>
+</section>
+</body>
+
+<script>
+function show(screenId) {
+  document.getElementById('routeScreen').hidden = (screenId !== 'routeScreen');
+  document.getElementById('timeScreen').hidden = (screenId !== 'timeScreen');
+}
+
+async function loadTimes(route) {
+  const response = await fetch('/api/routes/' + route.id + '/times');
+  const times = await response.json();
+
+  document.getElementById('routeTitle').textContent = route.name;
+
+  const list = document.getElementById('timeList');
+  list.innerHTML = '';
+  for (const t of times) {
+    const button = document.createElement('button');
+    button.textContent = t.depart_time;
+    button.onclick = () => alert('You picked ' + route.name + ' at ' + t.depart_time);
+    list.appendChild(button);
+  }
+
+  show('timeScreen');
+}
+
+
+async function loadRoutes() {
+  const response = await fetch('/api/routes');
+  const routes = await response.json();
+
+  const list = document.getElementById('routeList');
+  for (const route of routes) {
+    const button = document.createElement('button');
+    button.textContent = route.name;
+    button.onclick = () => loadTimes(route);
+    list.appendChild(button);
+  }
+}
+
+loadRoutes();
+document.getElementById('backBtn').onclick = () => show('routeScreen');
+
+</script>
+
+
+</html>
+
