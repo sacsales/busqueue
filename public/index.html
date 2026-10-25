@@ -21,8 +21,10 @@
 <section id="resultScreen" hidden>
   <h1 id="resultTitle"></h1>
   <p id="resultMsg"></p>
-  <button id="resultBackBtn">← Routes</button>
+  <button id="cancelBtn" hidden>Leave the queue</button>
+  <button id="resultBackBtn" hidden>← Routes</button>
 </section>
+
 
 <section id="phoneScreen">
     <h1>Enter your phone number</h1>
@@ -30,6 +32,7 @@
     <button id="phoneBtn">Continue</button>
     <p id="phoneMsg"></p>
 </section>
+
 </body>
 
 <script>
@@ -39,29 +42,59 @@ function show(screenId) {
   }
 }
 
+function showResult(title, message, canCancel) {
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = message;
+  document.getElementById('cancelBtn').hidden = !canCancel;
+  document.getElementById('resultBackBtn').hidden = canCancel;
+  show('resultScreen');
+}
 
-async function joinQueue(route, t) {
-  const response = await fetch('/api/times/' + t.id + '/queue', {
+async function checkSpot() {
+  const { data: spot } = await post('/api/queue/mine', { phone: phone });
+
+  if (spot) {
+    showResult(
+      "You're in line",
+      spot.route_name + ' at ' + spot.depart_time + ': you are #' + spot.position + ', with ' + spot.ahead + ' ahead of you.',
+      true
+    );
+  } else {
+    show('routeScreen');
+  }
+}
+
+async function setPhone() {
+  const cleaned = document.getElementById('phone').value.replace(/[^\d+]/g, '');
+
+  if (!/^\+?\d{8,15}$/.test(cleaned)) {
+    document.getElementById('phoneMsg').textContent = 'Enter a valid phone number, with country code';
+    return;
+  }
+
+  phone = cleaned;
+  document.getElementById('phoneMsg').textContent = '';
+  await checkSpot();
+}
+
+async function post(url, body) {
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: phone })
+    body: JSON.stringify(body)
   });
-  const data = await response.json();
+  return { ok: response.ok, status: response.status, data: await response.json() };
+}
 
-  const title = document.getElementById('resultTitle');
-  const msg = document.getElementById('resultMsg');
 
-  if (response.ok) {
-    title.textContent = "You're in line";
-    msg.textContent = route.name + ' at ' + t.depart_time + ': you are #' + data.position + '.';
-  } else if (response.status === 409 && data.route_name) {
-    title.textContent = 'Already in line';
-    msg.textContent = 'You are #' + data.position + ' for ' + data.route_name + ' at ' + data.depart_time + '.';
+async function joinQueue(timeId) {
+  const result = await post('/api/times/' + timeId + '/queue', { phone: phone });
+
+  if (result.ok || result.status === 409) {
+    await checkSpot();
   } else {
-    title.textContent = 'Could not join';
-    msg.textContent = data.error;
+    showResult('Could not join', result.data.error, false);
   }
-  show('resultScreen');
 }
 
 
@@ -76,12 +109,19 @@ async function loadTimes(route) {
   for (const t of times) {
     const button = document.createElement('button');
     button.textContent = t.depart_time;
-    button.onclick = () => joinQueue(route, t);
+    button.onclick = () => joinQueue(t.id);
     list.appendChild(button);
   }
 
   show('timeScreen');
 }
+
+async function cancelSpot() {
+  if (!confirm('Leave the queue?')) return;
+  await post('/api/queue/cancel', { phone: phone });
+  show('routeScreen');
+}
+
 
 let phone = '';
 
@@ -116,6 +156,9 @@ loadRoutes();
 document.getElementById('backBtn').onclick = () => show('routeScreen');
 document.getElementById('phoneBtn').onclick = setPhone;
 document.getElementById('resultBackBtn').onclick = () => show('routeScreen');
+document.getElementById('cancelBtn').onclick = cancelSpot;
+
+
 
 </script>
 </html>

@@ -7,8 +7,15 @@ app.use(express.static('public'));
 
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/busqueue' }); //connect to postgresql db
+
+function cleanPhone(raw) {
+  return String(raw || '').replace(/[^\d+]/g, '');
+}
+
+
 app.post('/api/times/:id/queue', async (req, res) => {
-  const phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
+  const phone = cleanPhone(req.body.phone);
+
   if (!/^\+?\d{8,15}$/.test(phone)) {
     return res.status(400).json({ error: 'Enter a valid phone number' });
   }
@@ -70,6 +77,36 @@ app.get('/api/routes/:id/times', async (req, res) => {
     [req.params.id]
   );
   res.json(result.rows);
+});
+
+app.post('/api/queue/mine', async (req, res) => {
+  const phone = cleanPhone(req.body.phone);
+  const { rows } = await db.query(
+    `SELECT q.position, r.name AS route_name,
+            to_char(t.depart_time, 'HH24:MI') AS depart_time,
+            (SELECT COUNT(*) FROM queue_entries o
+             WHERE o.route_time_id = q.route_time_id
+               AND o.service_date = q.service_date
+               AND o.status = 'waiting'
+               AND o.position < q.position)::int AS ahead
+     FROM queue_entries q
+     JOIN route_times t ON t.id = q.route_time_id
+     JOIN routes r ON r.id = t.route_id
+     WHERE q.phone = $1 AND q.service_date = CURRENT_DATE AND q.status = 'waiting'`,
+    [phone]
+  );
+  res.json(rows[0] || null);
+});
+
+app.post('/api/queue/cancel', async (req, res) => {
+  const phone = cleanPhone(req.body.phone);
+  const result = await db.query(
+    `UPDATE queue_entries SET status = 'cancelled'
+     WHERE phone = $1 AND service_date = CURRENT_DATE AND status = 'waiting'
+     RETURNING id`,
+    [phone]
+  );
+  res.json({ cancelled: result.rows.length > 0 });
 });
 
 
