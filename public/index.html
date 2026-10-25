@@ -18,6 +18,12 @@
   <div id="timeList"></div>
 </section>
 
+<section id="resultScreen" hidden>
+  <h1 id="resultTitle"></h1>
+  <p id="resultMsg"></p>
+  <button id="resultBackBtn">← Routes</button>
+</section>
+
 <section id="phoneScreen">
     <h1>Enter your phone number</h1>
     <input id = "phone" type="tel" placeholder="+129030283">
@@ -28,10 +34,36 @@
 
 <script>
 function show(screenId) {
-  for (const id of ['phoneScreen', 'routeScreen', 'timeScreen']) {
+  for (const id of ['phoneScreen', 'routeScreen', 'timeScreen', 'resultScreen']) {
     document.getElementById(id).hidden = (id !== screenId);
   }
 }
+
+
+async function joinQueue(route, t) {
+  const response = await fetch('/api/times/' + t.id + '/queue', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: phone })
+  });
+  const data = await response.json();
+
+  const title = document.getElementById('resultTitle');
+  const msg = document.getElementById('resultMsg');
+
+  if (response.ok) {
+    title.textContent = "You're in line";
+    msg.textContent = route.name + ' at ' + t.depart_time + ': you are #' + data.position + '.';
+  } else if (response.status === 409 && data.route_name) {
+    title.textContent = 'Already in line';
+    msg.textContent = 'You are #' + data.position + ' for ' + data.route_name + ' at ' + data.depart_time + '.';
+  } else {
+    title.textContent = 'Could not join';
+    msg.textContent = data.error;
+  }
+  show('resultScreen');
+}
+
 
 async function loadTimes(route) {
   const response = await fetch('/api/routes/' + route.id + '/times');
@@ -44,7 +76,7 @@ async function loadTimes(route) {
   for (const t of times) {
     const button = document.createElement('button');
     button.textContent = t.depart_time;
-    button.onclick = () => alert('You picked ' + route.name + ' at ' + t.depart_time + ' as ' + phone);
+    button.onclick = () => joinQueue(route, t);
     list.appendChild(button);
   }
 
@@ -83,6 +115,7 @@ async function loadRoutes() {
 loadRoutes();
 document.getElementById('backBtn').onclick = () => show('routeScreen');
 document.getElementById('phoneBtn').onclick = setPhone;
+document.getElementById('resultBackBtn').onclick = () => show('routeScreen');
 
 </script>
 </html>
