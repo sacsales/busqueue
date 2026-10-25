@@ -17,7 +17,7 @@ function makeCode() {
 const app = express();
 app.use(express.json());     
 app.use(express.static('public'));
-
+app.set('trust proxy', 1);
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/busqueue' }); //connect to postgresql db
 
@@ -226,14 +226,14 @@ app.get('/api/qr/:code', async (req, res) => {
   if (!/^[A-HJKMNP-Z2-9]{6}$/.test(code)) {
     return res.status(400).send('Bad code');
   }
+  const link = req.protocol + '://' + req.get('host') + '/attendant.html?code=' + code;
   try {
-    const png = await QRCode.toBuffer(code, { margin: 1, width: 180 });
-    res.type('image/png').send(png);
+    const svg = await QRCode.toString(link, { type: 'svg', margin: 1, width: 180 });
+    res.type('image/svg+xml').send(svg);
   } catch (e) {
     res.status(500).send('Could not draw QR');
   }
 });
-
 
 
 app.listen(process.env.PORT || 3000, () => console.log('Running'));

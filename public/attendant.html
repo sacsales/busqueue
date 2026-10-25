@@ -10,6 +10,7 @@
   <input id="token" type="password" placeholder="Staff token">
   <input id="code" placeholder="Rider's code" autocapitalize="characters" autocomplete="off">
   <button id="lookupBtn">Look up</button>
+  <button id="forgetBtn">Forget token on this device</button>
   <p id="msg"></p>
 
   <div id="details" hidden>
@@ -20,7 +21,7 @@
   </div>
 
   <button id="boardBtn" hidden>Mark as boarded</button>
-  
+
   <script> 
 
   async function staffPost(url) {
@@ -52,6 +53,9 @@ async function lookup() {
     return;
   }
 
+  try { localStorage.setItem('staffToken', document.getElementById('token').value); } catch (e) {}
+
+
   document.getElementById('msg').textContent = '';
   document.getElementById('dVerdict').textContent = verdict(data);
   document.getElementById('dRoute').textContent = data.route_name + ' at ' + data.depart_time;
@@ -73,6 +77,29 @@ async function board() {
 document.getElementById('lookupBtn').onclick = lookup;
 document.getElementById('boardBtn').onclick = board;
 document.getElementById('code').onkeydown = (e) => { if (e.key === 'Enter') lookup(); };
+
+document.getElementById('forgetBtn').onclick = () => {
+  try { localStorage.removeItem('staffToken'); } catch (e) {}
+  document.getElementById('token').value = '';
+  document.getElementById('msg').textContent = 'Token forgotten.';
+};
+
+try {
+  const saved = localStorage.getItem('staffToken');
+  if (saved) document.getElementById('token').value = saved;
+} catch (e) {}
+
+const linkCode = new URLSearchParams(location.search).get('code');
+if (linkCode) {
+  document.getElementById('code').value = linkCode;
+  if (document.getElementById('token').value) {
+    lookup();
+  } else {
+    document.getElementById('msg').textContent = 'Enter the staff token to see this ride.';
+  }
+}
+
+
 
 </script>
 </body>
