@@ -4,13 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Driver</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
   <h1>Driver console</h1>
-  <input id="token" type="password" placeholder="Driver token">
-  <select id="trip"></select>
-  <button id="alertBtn">I'm 15 minutes from the station</button>
-  <p id="msg"></p>
+  <div class="card">
+    <input id="token" type="password" placeholder="Driver token">
+    <select id="trip"></select>
+    <button id="alertBtn">I'm 15 minutes from the station</button>
+    <p id="msg" class="muted"></p>
+  </div>
+</div>
 
   <script>
     async function loadTrips() {

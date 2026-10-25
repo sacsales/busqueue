@@ -1,0 +1,157 @@
+/* 1. Colors live in one place, so the whole look can change by editing these */
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1c1f26;
+  --muted: #6b7280;
+  --border: #e3e6eb;
+  --primary: #1d4ed8;
+  --primary-text: #ffffff;
+  --ok-bg: #e6f6ec;   --ok-text: #14532d;
+  --bad-bg: #fde8e8;  --bad-text: #7f1d1d;
+  --warn-bg: #fff4d6; --warn-text: #7a4b00;
+  --done-bg: #e8eefc; --done-text: #1e3a8a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12141a;
+    --card: #1b1e26;
+    --text: #eceef2;
+    --muted: #9aa1ae;
+    --border: #2b303b;
+    --primary: #6d8dff;
+    --primary-text: #0b1020;
+    --ok-bg: #123524;   --ok-text: #b7f0cd;
+    --bad-bg: #3b1717;  --bad-text: #ffc9c9;
+    --warn-bg: #3d2f0d; --warn-text: #ffe2a0;
+    --done-bg: #1c2747; --done-text: #c7d6ff;
+  }
+}
+
+/* 2. Make the hidden attribute always win */
+[hidden] { display: none !important; }
+
+/* 3. Page basics */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 16px 48px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.45;
+}
+
+.app { max-width: 420px; margin: 0 auto; }
+
+h1 { font-size: 1.5rem; margin: 0 0 6px; }
+h2 { font-size: 1.15rem; margin: 0 0 8px; }
+p  { margin: 0 0 12px; }
+
+.muted { color: var(--muted); }
+.error { color: var(--bad-text); min-height: 1.4em; }
+
+/* 4. Cards and form fields */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+input, select {
+  width: 100%;
+  font: inherit;
+  padding: 14px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+}
+
+input:focus, select:focus, button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  outline-offset: 1px;
+}
+
+/* 5. Buttons */
+button {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  padding: 14px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-text);
+  cursor: pointer;
+}
+button:active { transform: scale(0.98); }
+
+button.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+button.link {
+  width: auto;
+  padding: 4px 0;
+  background: none;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+button.choice {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  text-align: left;
+  font-weight: 500;
+  padding: 16px;
+}
+button.choice:hover { border-color: var(--primary); }
+
+/* 6. Rider result screen */
+.banner {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-align: center;
+  margin: 4px 0 14px;
+}
+
+.qr {
+  display: block;
+  margin: 0 auto;
+  width: 180px;
+  height: 180px;
+  padding: 10px;
+  background: #ffffff;   /* QR codes need a light background to scan, even in dark mode */
+  border-radius: 12px;
+}
+
+/* 7. Attendant verdicts */
+.verdict {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.verdict.ok   { background: var(--ok-bg);   color: var(--ok-text); }
+.verdict.bad  { background: var(--bad-bg);  color: var(--bad-text); }
+.verdict.done { background: var(--done-bg); color: var(--done-text); }

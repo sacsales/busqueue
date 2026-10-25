@@ -4,25 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Attendant</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
   <h1>Check a ride</h1>
-  <input id="token" type="password" placeholder="Staff token">
-  <input id="code" placeholder="Rider's code" autocapitalize="characters" autocomplete="off">
-  <button id="lookupBtn">Look up</button>
-  <button id="forgetBtn">Forget token on this device</button>
-  <p id="msg"></p>
-
-  <div id="details" hidden>
-    <h2 id="dVerdict"></h2>
-    <p id="dRoute"></p>
-    <p id="dPosition"></p>
-    <p id="dPhone"></p>
+  <div class="card">
+    <input id="token" type="password" placeholder="Staff token">
+    <input id="code" placeholder="Rider's code" autocapitalize="characters" autocomplete="off">
+    <button id="lookupBtn">Look up</button>
+    <p id="msg" class="error"></p>
   </div>
 
-  <button id="boardBtn" hidden>Mark as boarded</button>
+  <div id="details" class="card" hidden>
+    <h2 id="dVerdict" class="verdict"></h2>
+    <p id="dRoute"></p>
+    <p id="dPosition" class="muted"></p>
+    <p id="dPhone" class="muted"></p>
+    <button id="boardBtn" hidden>Mark as boarded</button>
+  </div>
 
-  <script> 
+  <button id="forgetBtn" class="secondary">Forget token on this device</button>
+</div>
+<script>
 
   async function staffPost(url) {
   const response = await fetch(url, {
@@ -42,6 +46,12 @@ function verdict(d) {
   if (d.status === 'boarded') return 'ALREADY BOARDED';
   return 'VALID: waiting in line';
 }
+function verdictClass(d) {
+  if (!d.is_today || d.status === 'cancelled') return 'bad';
+  if (d.status === 'boarded') return 'done';
+  return 'ok';
+}
+
 
 async function lookup() {
   const { ok, data } = await staffPost('/api/attendant/lookup');
@@ -57,7 +67,9 @@ async function lookup() {
 
 
   document.getElementById('msg').textContent = '';
-  document.getElementById('dVerdict').textContent = verdict(data);
+  const v = document.getElementById('dVerdict');
+  v.textContent = verdict(data);
+  v.className = 'verdict ' + verdictClass(data);
   document.getElementById('dRoute').textContent = data.route_name + ' at ' + data.depart_time;
   document.getElementById('dPosition').textContent = 'Position #' + data.position + ' (' + data.ahead + ' ahead)';
   document.getElementById('dPhone').textContent = 'Phone ends in ' + data.phone_last4;
