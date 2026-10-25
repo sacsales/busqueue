@@ -15,6 +15,7 @@ CREATE TABLE queue_entries (
   service_date  DATE NOT NULL DEFAULT CURRENT_DATE,
   position      INT NOT NULL,
   phone         TEXT NOT NULL,
+  code          TEXT NOT NULL UNIQUE,
   status        TEXT NOT NULL DEFAULT 'waiting'
                 CHECK (status IN ('waiting', 'boarded', 'cancelled')),
   joined_at     TIMESTAMPTZ NOT NULL DEFAULT now(),

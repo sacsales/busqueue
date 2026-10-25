@@ -21,6 +21,9 @@
 <section id="resultScreen" hidden>
   <h1 id="resultTitle"></h1>
   <p id="resultMsg"></p>
+  <p id="codeBlock" hidden>
+  Your code: <strong id="codeValue" style="font-size:1.8rem; letter-spacing:0.15em;"></strong>
+  </p>
   <button id="cancelBtn" hidden>Leave the queue</button>
   <button id="resultBackBtn" hidden>← Routes</button>
   <p id="resultAlert" hidden style="background:#fff3cd; padding:12px; border-radius:8px;">
@@ -47,6 +50,7 @@ function show(screenId) {
 }
 
 function showResult(title, message, canCancel, alerted) {
+  document.getElementById('codeBlock').hidden = true;
   document.getElementById('resultTitle').textContent = title;
   document.getElementById('resultMsg').textContent = message;
   document.getElementById('resultAlert').hidden = !alerted;
@@ -65,6 +69,8 @@ async function checkSpot() {
       true,
       spot.alerted
     );
+    document.getElementById('codeBlock').hidden = false;
+    document.getElementById('codeValue').textContent = spot.code;
     if (!pollTimer) pollTimer = setInterval(checkSpot, 10000);
   } else {
     stopPolling();
@@ -142,18 +148,7 @@ function stopPolling() {
 }
 
 
-function setPhone() {
-  const cleaned = document.getElementById('phone').value.replace(/[^\d+]/g, '');
 
-  if (!/^\+?\d{8,15}$/.test(cleaned)) {
-    document.getElementById('phoneMsg').textContent = 'Enter a valid phone number, with country code';
-    return;
-  }
-
-  phone = cleaned;
-  document.getElementById('phoneMsg').textContent = '';
-  show('routeScreen');
-}
 
 
 async function loadRoutes() {

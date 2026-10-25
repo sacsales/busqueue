@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendant</title>
+</head>
+<body>
+  <h1>Check a ride</h1>
+  <input id="token" type="password" placeholder="Staff token">
+  <input id="code" placeholder="Rider's code" autocapitalize="characters" autocomplete="off">
+  <button id="lookupBtn">Look up</button>
+  <p id="msg"></p>
+
+  <div id="details" hidden>
+    <h2 id="dVerdict"></h2>
+    <p id="dRoute"></p>
+    <p id="dPosition"></p>
+    <p id="dPhone"></p>
+  </div>
+
+  <script>
+    function verdict(d) {
+      if (!d.is_today) return 'NOT VALID: ticket is for ' + d.service_date;
+      if (d.status === 'cancelled') return 'NOT VALID: rider left the queue';
+      if (d.status === 'boarded') return 'ALREADY BOARDED';
+      return 'VALID: waiting in line';
+    }
+
+    async function lookup() {
+      const response = await fetch('/api/attendant/lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-driver-token': document.getElementById('token').value
+        },
+        body: JSON.stringify({ code: document.getElementById('code').value })
+      });
+      const data = await response.json();
+      const box = document.getElementById('details');
+
+      if (!response.ok) {
+        box.hidden = true;
+        document.getElementById('msg').textContent = data.error;
+        return;
+      }
+
+      document.getElementById('msg').textContent = '';
+      document.getElementById('dVerdict').textContent = verdict(data);
+      document.getElementById('dRoute').textContent = data.route_name + ' at ' + data.depart_time;
+      document.getElementById('dPosition').textContent = 'Position #' + data.position + ' (' + data.ahead + ' ahead)';
+      document.getElementById('dPhone').textContent = 'Phone ends in ' + data.phone_last4;
+      box.hidden = false;
+    }
+
+    document.getElementById('lookupBtn').onclick = lookup;
+    document.getElementById('code').onkeydown = (e) => { if (e.key === 'Enter') lookup(); };
+  </script>
+</body>
+</html>

@@ -1,6 +1,19 @@
 const express = require('express');
 const { Pool } = require('pg');
 
+const crypto = require('crypto');
+
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+function makeCode() {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
+  }
+  return code;
+}
+
+
 const app = express();
 app.use(express.json());     
 app.use(express.static('public'));
@@ -39,14 +52,14 @@ app.post('/api/times/:id/queue', async (req, res) => {
       return res.status(409).json({ error: 'Already in line', ...existing.rows[0] });
     }
 
-    const result = await client.query(
-      `INSERT INTO queue_entries (route_time_id, position, phone)
-       SELECT $1::int, COALESCE(MAX(position), 0) + 1, $2::text
-       FROM queue_entries
-       WHERE route_time_id = $1::int AND service_date = CURRENT_DATE
-       RETURNING id, position`,
-      [req.params.id, phone]
-    );
+      const result = await client.query(
+        `INSERT INTO queue_entries (route_time_id, position, phone, code)
+        SELECT $1::int, COALESCE(MAX(position), 0) + 1, $2::text, $3::text
+        FROM queue_entries
+        WHERE route_time_id = $1::int AND service_date = CURRENT_DATE
+        RETURNING id, position, code`,
+        [req.params.id, phone, makeCode()]
+      );
     await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (e) {
@@ -82,7 +95,7 @@ app.get('/api/routes/:id/times', async (req, res) => {
 app.post('/api/queue/mine', async (req, res) => {
   const phone = cleanPhone(req.body.phone);
   const { rows } = await db.query(
-    `SELECT q.position, r.name AS route_name,
+    `SELECT q.position, q.code, r.name AS route_name,
             to_char(t.depart_time, 'HH24:MI') AS depart_time,
             (SELECT COUNT(*) FROM queue_entries o
              WHERE o.route_time_id = q.route_time_id
@@ -142,6 +155,44 @@ app.get('/api/trips', async (req, res) => {
   );
   res.json(rows);
 });
+
+
+app.post('/api/attendant/lookup', async (req, res) => {
+  const token = process.env.DRIVER_TOKEN;
+  if (!token || req.get('x-driver-token') !== token) {
+    return res.status(401).json({ error: 'Not allowed' });
+  }
+
+  const code = String(req.body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  try {
+    const { rows } = await db.query(
+      `SELECT q.code, q.position, q.status,
+              to_char(q.service_date, 'YYYY-MM-DD') AS service_date,
+              (q.service_date = CURRENT_DATE) AS is_today,
+              right(q.phone, 4) AS phone_last4,
+              r.name AS route_name,
+              to_char(t.depart_time, 'HH24:MI') AS depart_time,
+              (SELECT COUNT(*) FROM queue_entries o
+               WHERE o.route_time_id = q.route_time_id
+                 AND o.service_date = q.service_date
+                 AND o.status = 'waiting'
+                 AND o.position < q.position)::int AS ahead
+       FROM queue_entries q
+       JOIN route_times t ON t.id = q.route_time_id
+       JOIN routes r ON r.id = t.route_id
+       WHERE q.code = $1`,
+      [code]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No such code' });
+    }
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Lookup failed' });
+  }
+});
+
 
 
 
