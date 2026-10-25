@@ -5,8 +5,7 @@ const app = express();
 app.use(express.static('public'));
 
 
-const db = new Pool({ connectionString: 'postgres://localhost:5432/busqueue' });
-
+const db = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/busqueue' }); //connect to postgresql db
 
 
 app.get('/', (req, res) => {
@@ -15,8 +14,8 @@ app.get('/', (req, res) => {
 
 app.get('/api/routes', async (req, res) => {
   const result = await db.query('SELECT id, name FROM routes ORDER BY name');
-  res.json(result.rows);
-});
+  res.json(result.rows); 
+}); 
 
 app.get('/api/routes/:id/times', async (req, res) => {
   const result = await db.query(
@@ -28,5 +27,5 @@ app.get('/api/routes/:id/times', async (req, res) => {
 });
 
 
-app.listen(3000, () => console.log('Running on http://localhost:3000'));
+app.listen(process.env.PORT || 3000, () => console.log('Running'));
 
