@@ -148,6 +148,11 @@ function stopPolling() {
 }
 
 
+function isStaff(req) {
+  const token = process.env.DRIVER_TOKEN;
+  return Boolean(token) && req.get('x-driver-token') === token;
+}
+
 
 
 

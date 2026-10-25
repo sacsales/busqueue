@@ -25,6 +25,12 @@ function cleanPhone(raw) {
   return String(raw || '').replace(/[^\d+]/g, '');
 }
 
+function isStaff(req) {
+  const token = process.env.DRIVER_TOKEN;
+  return Boolean(token) && req.get('x-driver-token') === token;
+}
+
+
 
 app.post('/api/times/:id/queue', async (req, res) => {
   const phone = cleanPhone(req.body.phone);
@@ -126,8 +132,7 @@ app.post('/api/queue/cancel', async (req, res) => {
 });
 
 app.post('/api/times/:id/approaching', async (req, res) => {
-  const token = process.env.DRIVER_TOKEN;
-  if (!token || req.get('x-driver-token') !== token) {
+  if (!isStaff(req)) {
     return res.status(401).json({ error: 'Not allowed' });
   }
 
@@ -158,8 +163,7 @@ app.get('/api/trips', async (req, res) => {
 
 
 app.post('/api/attendant/lookup', async (req, res) => {
-  const token = process.env.DRIVER_TOKEN;
-  if (!token || req.get('x-driver-token') !== token) {
+  if (!isStaff(req)) {
     return res.status(401).json({ error: 'Not allowed' });
   }
 
@@ -190,6 +194,29 @@ app.post('/api/attendant/lookup', async (req, res) => {
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: 'Lookup failed' });
+  }
+});
+
+app.post('/api/attendant/board', async (req, res) => {
+  if (!isStaff(req)) {
+    return res.status(401).json({ error: 'Not allowed' });
+  }
+
+  const code = String(req.body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  try {
+    const result = await db.query(
+      `UPDATE queue_entries SET status = 'boarded'
+       WHERE code = $1 AND status = 'waiting' AND service_date = CURRENT_DATE
+       RETURNING id`,
+      [code]
+    );
+    if (result.rowCount === 0) {
+      return res.status(409).json({ error: 'Cannot board: not a waiting ticket for today' });
+    }
+    res.json({ boarded: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Could not update' });
   }
 });
 

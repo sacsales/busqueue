@@ -19,42 +19,61 @@
     <p id="dPhone"></p>
   </div>
 
-  <script>
-    function verdict(d) {
-      if (!d.is_today) return 'NOT VALID: ticket is for ' + d.service_date;
-      if (d.status === 'cancelled') return 'NOT VALID: rider left the queue';
-      if (d.status === 'boarded') return 'ALREADY BOARDED';
-      return 'VALID: waiting in line';
-    }
+  <button id="boardBtn" hidden>Mark as boarded</button>
+  
+  <script> 
 
-    async function lookup() {
-      const response = await fetch('/api/attendant/lookup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-driver-token': document.getElementById('token').value
-        },
-        body: JSON.stringify({ code: document.getElementById('code').value })
-      });
-      const data = await response.json();
-      const box = document.getElementById('details');
+  async function staffPost(url) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-driver-token': document.getElementById('token').value
+    },
+    body: JSON.stringify({ code: document.getElementById('code').value })
+  });
+  return { ok: response.ok, data: await response.json() };
+}
 
-      if (!response.ok) {
-        box.hidden = true;
-        document.getElementById('msg').textContent = data.error;
-        return;
-      }
+function verdict(d) {
+  if (!d.is_today) return 'NOT VALID: ticket is for ' + d.service_date;
+  if (d.status === 'cancelled') return 'NOT VALID: rider left the queue';
+  if (d.status === 'boarded') return 'ALREADY BOARDED';
+  return 'VALID: waiting in line';
+}
 
-      document.getElementById('msg').textContent = '';
-      document.getElementById('dVerdict').textContent = verdict(data);
-      document.getElementById('dRoute').textContent = data.route_name + ' at ' + data.depart_time;
-      document.getElementById('dPosition').textContent = 'Position #' + data.position + ' (' + data.ahead + ' ahead)';
-      document.getElementById('dPhone').textContent = 'Phone ends in ' + data.phone_last4;
-      box.hidden = false;
-    }
+async function lookup() {
+  const { ok, data } = await staffPost('/api/attendant/lookup');
+  const box = document.getElementById('details');
 
-    document.getElementById('lookupBtn').onclick = lookup;
-    document.getElementById('code').onkeydown = (e) => { if (e.key === 'Enter') lookup(); };
-  </script>
+  if (!ok) {
+    box.hidden = true;
+    document.getElementById('msg').textContent = data.error;
+    return;
+  }
+
+  document.getElementById('msg').textContent = '';
+  document.getElementById('dVerdict').textContent = verdict(data);
+  document.getElementById('dRoute').textContent = data.route_name + ' at ' + data.depart_time;
+  document.getElementById('dPosition').textContent = 'Position #' + data.position + ' (' + data.ahead + ' ahead)';
+  document.getElementById('dPhone').textContent = 'Phone ends in ' + data.phone_last4;
+  document.getElementById('boardBtn').hidden = !(data.is_today && data.status === 'waiting');
+  box.hidden = false;
+}
+
+async function board() {
+  const { ok, data } = await staffPost('/api/attendant/board');
+  if (!ok) {
+    document.getElementById('msg').textContent = data.error;
+    return;
+  }
+  await lookup();
+}
+
+document.getElementById('lookupBtn').onclick = lookup;
+document.getElementById('boardBtn').onclick = board;
+document.getElementById('code').onkeydown = (e) => { if (e.key === 'Enter') lookup(); };
+
+</script>
 </body>
 </html>
