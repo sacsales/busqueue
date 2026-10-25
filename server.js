@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-
+const QRCode = require('qrcode');
 const crypto = require('crypto');
 
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -220,6 +220,19 @@ app.post('/api/attendant/board', async (req, res) => {
   }
 });
 
+
+app.get('/api/qr/:code', async (req, res) => {
+  const code = req.params.code.toUpperCase();
+  if (!/^[A-HJKMNP-Z2-9]{6}$/.test(code)) {
+    return res.status(400).send('Bad code');
+  }
+  try {
+    const png = await QRCode.toBuffer(code, { margin: 1, width: 180 });
+    res.type('image/png').send(png);
+  } catch (e) {
+    res.status(500).send('Could not draw QR');
+  }
+});
 
 
 

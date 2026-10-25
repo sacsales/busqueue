@@ -23,7 +23,9 @@
   <p id="resultMsg"></p>
   <p id="codeBlock" hidden>
   Your code: <strong id="codeValue" style="font-size:1.8rem; letter-spacing:0.15em;"></strong>
-  </p>
+  <br>
+  <img id="codeQr" alt="QR code for your ride code" width="180" height="180">
+</p>
   <button id="cancelBtn" hidden>Leave the queue</button>
   <button id="resultBackBtn" hidden>← Routes</button>
   <p id="resultAlert" hidden style="background:#fff3cd; padding:12px; border-radius:8px;">
@@ -71,6 +73,7 @@ async function checkSpot() {
     );
     document.getElementById('codeBlock').hidden = false;
     document.getElementById('codeValue').textContent = spot.code;
+    document.getElementById('codeQr').src = '/api/qr/' + spot.code;
     if (!pollTimer) pollTimer = setInterval(checkSpot, 10000);
   } else {
     stopPolling();
