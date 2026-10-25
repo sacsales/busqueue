@@ -23,6 +23,10 @@
   <p id="resultMsg"></p>
   <button id="cancelBtn" hidden>Leave the queue</button>
   <button id="resultBackBtn" hidden>← Routes</button>
+  <p id="resultAlert" hidden style="background:#fff3cd; padding:12px; border-radius:8px;">
+  <strong>Your bus is about 15 minutes away. Head to the station.</strong>
+  </p>
+
 </section>
 
 
@@ -42,9 +46,10 @@ function show(screenId) {
   }
 }
 
-function showResult(title, message, canCancel) {
+function showResult(title, message, canCancel, alerted) {
   document.getElementById('resultTitle').textContent = title;
   document.getElementById('resultMsg').textContent = message;
+  document.getElementById('resultAlert').hidden = !alerted;
   document.getElementById('cancelBtn').hidden = !canCancel;
   document.getElementById('resultBackBtn').hidden = canCancel;
   show('resultScreen');
@@ -57,12 +62,17 @@ async function checkSpot() {
     showResult(
       "You're in line",
       spot.route_name + ' at ' + spot.depart_time + ': you are #' + spot.position + ', with ' + spot.ahead + ' ahead of you.',
-      true
+      true,
+      spot.alerted
     );
+    if (!pollTimer) pollTimer = setInterval(checkSpot, 10000);
   } else {
+    stopPolling();
     show('routeScreen');
   }
 }
+
+
 
 async function setPhone() {
   const cleaned = document.getElementById('phone').value.replace(/[^\d+]/g, '');
@@ -118,12 +128,19 @@ async function loadTimes(route) {
 
 async function cancelSpot() {
   if (!confirm('Leave the queue?')) return;
+  stopPolling();
   await post('/api/queue/cancel', { phone: phone });
   show('routeScreen');
 }
 
-
 let phone = '';
+let pollTimer = null;
+
+function stopPolling() {
+  clearInterval(pollTimer);
+  pollTimer = null;
+}
+
 
 function setPhone() {
   const cleaned = document.getElementById('phone').value.replace(/[^\d+]/g, '');

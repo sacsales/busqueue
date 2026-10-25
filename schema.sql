@@ -35,3 +35,12 @@ INSERT INTO route_times (route_id, depart_time) VALUES
   (1, '12:30'),
   (2, '06:45'),
   (2, '08:20');
+
+
+CREATE TABLE trip_alerts (
+  route_time_id INT NOT NULL REFERENCES route_times(id),
+  service_date  DATE NOT NULL DEFAULT CURRENT_DATE,
+  alerted_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (route_time_id, service_date)
+);
+

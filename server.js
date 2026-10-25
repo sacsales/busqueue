@@ -88,7 +88,10 @@ app.post('/api/queue/mine', async (req, res) => {
              WHERE o.route_time_id = q.route_time_id
                AND o.service_date = q.service_date
                AND o.status = 'waiting'
-               AND o.position < q.position)::int AS ahead
+               AND o.position < q.position)::int AS ahead,
+               EXISTS (SELECT 1 FROM trip_alerts a
+               WHERE a.route_time_id = q.route_time_id
+               AND a.service_date = q.service_date) AS alerted
      FROM queue_entries q
      JOIN route_times t ON t.id = q.route_time_id
      JOIN routes r ON r.id = t.route_id
@@ -108,6 +111,38 @@ app.post('/api/queue/cancel', async (req, res) => {
   );
   res.json({ cancelled: result.rows.length > 0 });
 });
+
+app.post('/api/times/:id/approaching', async (req, res) => {
+  const token = process.env.DRIVER_TOKEN;
+  if (!token || req.get('x-driver-token') !== token) {
+    return res.status(401).json({ error: 'Not allowed' });
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO trip_alerts (route_time_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+      [req.params.id]
+    );
+    const waiting = await db.query(
+      `SELECT COUNT(*)::int AS n FROM queue_entries
+       WHERE route_time_id = $1 AND service_date = CURRENT_DATE AND status = 'waiting'`,
+      [req.params.id]
+    );
+    res.json({ alerted: true, waiting: waiting.rows[0].n });
+  } catch (e) {
+    res.status(400).json({ error: 'Could not record the alert' });
+  }
+});
+
+app.get('/api/trips', async (req, res) => {
+  const { rows } = await db.query(
+    `SELECT t.id, r.name, to_char(t.depart_time, 'HH24:MI') AS depart_time
+     FROM route_times t JOIN routes r ON r.id = t.route_id
+     ORDER BY r.name, t.depart_time`
+  );
+  res.json(rows);
+});
+
 
 
 app.listen(process.env.PORT || 3000, () => console.log('Running'));

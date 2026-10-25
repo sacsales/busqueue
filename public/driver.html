@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Driver</title>
+</head>
+<body>
+  <h1>Driver console</h1>
+  <input id="token" type="password" placeholder="Driver token">
+  <select id="trip"></select>
+  <button id="alertBtn">I'm 15 minutes from the station</button>
+  <p id="msg"></p>
+
+  <script>
+    async function loadTrips() {
+      const trips = await (await fetch('/api/trips')).json();
+      const select = document.getElementById('trip');
+      for (const t of trips) {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.name + ' · ' + t.depart_time;
+        select.appendChild(option);
+      }
+    }
+
+    async function sendAlert() {
+      const response = await fetch('/api/times/' + document.getElementById('trip').value + '/approaching', {
+        method: 'POST',
+        headers: { 'x-driver-token': document.getElementById('token').value }
+      });
+      const data = await response.json();
+      document.getElementById('msg').textContent = response.ok
+        ? 'Alert sent. ' + data.waiting + ' riders waiting.'
+        : data.error;
+    }
+
+    loadTrips();
+    document.getElementById('alertBtn').onclick = sendAlert;
+  </script>
+</body>
+</html>
+
