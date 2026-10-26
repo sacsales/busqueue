@@ -1,17 +1,21 @@
 /* 1. Colors live in one place, so the whole look can change by editing these */
 :root {
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --text: #1c1f26;
-  --muted: #6b7280;
-  --border: #e3e6eb;
-  --primary: #1d4ed8;
+  color-scheme: light;
+  --bg: #ffffff;
+  --card: #f4f9f9;
+  --field: #ffffff;
+  --text: #1a2b2e;
+  --muted: #5f7274;
+  --border: #d5e3e3;
+  --primary: #0f5c5c;
   --primary-text: #ffffff;
-  --ok-bg: #e6f6ec;   --ok-text: #14532d;
+  --ok-bg: #e6f5e9;   --ok-text: #14532d;
   --bad-bg: #fde8e8;  --bad-text: #7f1d1d;
   --warn-bg: #fff4d6; --warn-text: #7a4b00;
-  --done-bg: #e8eefc; --done-text: #1e3a8a;
+  --done-bg: #e9edf2; --done-text: #334155;
 }
+
+/*
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -28,6 +32,9 @@
     --done-bg: #1c2747; --done-text: #c7d6ff;
   }
 }
+*/
+
+
 
 /* 2. Make the hidden attribute always win */
 [hidden] { display: none !important; }
@@ -69,9 +76,12 @@ input, select {
   margin: 8px 0;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--card);
+  background: var(--field);
   color: var(--text);
 }
+
+h1 { color: var(--primary); }
+button.choice:hover { border-color: var(--primary); background: #eef6f6; }
 
 input:focus, select:focus, button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent);
